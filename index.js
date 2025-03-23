@@ -40,7 +40,10 @@ async function run() {
           });
           //slightly changes
 
-
+        app.get("/", (req, res) => {
+            res.send("grentify Server is running");
+        });
+        
 
 
 
@@ -57,9 +60,6 @@ run().catch(console.dir);
 
 
 // APIs
-app.get("/", (req, res) => {
-    res.send("CORS is enabled!");
-});
 
 
 app.listen(PORT, () => console.log(`Server running on port ${PORT}`));
