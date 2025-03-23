@@ -25,7 +25,19 @@ async function run() {
     try {
         // Connect the client to the server	(optional starting in v4.7)
         await client.connect();
+        const cameraCollection = client.db("grentify").collection("camera");
 
+        app.get("/camera", async (req, res) => {
+            try {
+
+              const cameras = await cameraCollection.find().toArray();
+              res.json(cameras);
+            } catch (error) {
+              res.status(500).json({ error: "Failed to fetch data" });
+            } finally {
+              await client.close();
+            }
+          });
 
 
 
