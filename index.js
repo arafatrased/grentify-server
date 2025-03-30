@@ -46,7 +46,7 @@ async function run() {
 
     // server root api
     app.get("/", (req, res) => {
-      res.send("grentify Server is running");
+      res.send("grentify Server is running!");
     });
   } finally {
     // Ensures that the client will close when you finish/error
