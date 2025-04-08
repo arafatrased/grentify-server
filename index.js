@@ -32,7 +32,17 @@ async function run() {
 
     // get all gadget data in mongodb
     app.get("/gadgets", async (req, res) => {
-      const result = await gadgetsCollection.find().toArray();
+      const result = await gadgetsCollection.find().sort({ _id: -1 }).toArray();
+      res.send(result);
+    });
+
+    // get limited gadget data in mongodb for home page
+    app.get("/gadgets-for-home", async (req, res) => {
+      const result = await gadgetsCollection
+        .find()
+        .sort({ _id: -1 })
+        .limit(6)
+        .toArray();
       res.send(result);
     });
 
