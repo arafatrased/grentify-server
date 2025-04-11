@@ -36,7 +36,7 @@ async function run() {
       res.send(result);
     });
 
-    // get limited gadget data in mongodb for home page
+    // get limited gadget data in mongodb for home page 
     app.get("/gadgets-for-home", async (req, res) => {
       const result = await gadgetsCollection
         .find()
