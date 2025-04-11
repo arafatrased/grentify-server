@@ -23,17 +23,60 @@ async function run() {
   try {
     const gadgetsCollection = client.db("grentify").collection("gadgets");
 
-    // post single gadget data in mongodb
+    // create or post single gadget data
     app.post("/gadget", async (req, res) => {
       const gadget = req.body;
       const result = await gadgetsCollection.insertOne(gadget);
       res.send(result);
     });
 
-    // get all gadget data in mongodb
+    // get all gadget data from mongodb with filtering
     app.get("/gadgets", async (req, res) => {
-      const result = await gadgetsCollection.find().sort({ _id: -1 }).toArray();
-      res.send(result);
+      const search = req.query.search || "";
+      const sortType = req.query.sort || "";
+      const categoryParams = req.query.category || "";
+      const categories = categoryParams.split(",").filter(Boolean);
+
+      // Search Query
+      const query = {
+        title: { $regex: search, $options: "i" },
+      };
+
+      // Category sorting
+      if (categories.length > 0) {
+        query["category.value"] = { $in: categories };
+      }
+
+      // sorting logic
+      let sort = { _id: -1 }; // show by default descending order
+
+      if (sortType === "title") {
+        sort = { title: 1 };
+      } else if (sortType === "price_asc") {
+        sort = { price: 1 }; // low to high
+      } else if (sortType === "price_desc") {
+        sort = { price: -1 }; // high to low
+      }
+
+      try {
+        const result = await gadgetsCollection.find(query).sort(sort).toArray();
+
+        res.send(result);
+      } catch {
+        res.status(500).send({ message: "server error" });
+      }
+    });
+
+    // get sidebar gadget data in mongodb for gadgets page
+    app.get("/gadgets-for-sidebar", async (req, res) => {
+      try {
+        const result = await gadgetsCollection
+          .aggregate([{ $sample: { size: 4 } }])
+          .toArray();
+        res.send(result);
+      } catch {
+        res.status(500).send({ message: "Server error" });
+      }
     });
 
     // get limited gadget data in mongodb for home page 
