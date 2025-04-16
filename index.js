@@ -2,6 +2,8 @@ const express = require("express");
 require("dotenv").config();
 const app = express();
 const cors = require("cors");
+const fetch = require("node-fetch");
+const axios = require("axios");
 const PORT = process.env.PORT || 5000;
 const { MongoClient, ServerApiVersion, ObjectId } = require("mongodb");
 
@@ -97,6 +99,7 @@ async function run() {
       res.send(result);
     });
 
+<<<<<<< HEAD
     // Dashboard all api //
 
     // get all gadget data for dashboard
@@ -157,6 +160,20 @@ async function run() {
         res.send(result);
       } catch {
         console.log("Delete faield");
+=======
+    // location data fetch
+
+    app.get("/api/location", async (req, res) => {
+      const GeoAPi = process.env.IP_GEO_LOACATION_API_KEY;
+      const url = `https://api.ipgeolocation.io/ipgeo?apiKey=${GeoAPi}&fields=geo`;
+
+      try {
+        const response = await axios.get(url);
+        res.json(response.data);
+      } catch (error) {
+        console.error("Error fetching location:", error.message);
+        res.status(500).json({ error: "Failed to fetch location" });
+>>>>>>> sw
       }
     });
 
@@ -173,4 +190,6 @@ run().catch(console.dir);
 
 // APIs
 
-app.listen(PORT, () => console.log(`Server running on port ${PORT}`));
+app.listen(PORT, () =>
+  console.log(`Server running on http://localhost:${PORT}`)
+);
