@@ -99,7 +99,7 @@ async function run() {
       res.send(result);
     });
 
-<<<<<<< HEAD
+
     // Dashboard all api //
 
     // get all gadget data for dashboard
@@ -160,7 +160,7 @@ async function run() {
         res.send(result);
       } catch {
         console.log("Delete faield");
-=======
+
     // location data fetch
 
     app.get("/api/location", async (req, res) => {
@@ -173,7 +173,6 @@ async function run() {
       } catch (error) {
         console.error("Error fetching location:", error.message);
         res.status(500).json({ error: "Failed to fetch location" });
->>>>>>> sw
       }
     });
 
