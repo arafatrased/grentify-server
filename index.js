@@ -2,7 +2,6 @@ const express = require("express");
 require("dotenv").config();
 const app = express();
 const cors = require("cors");
-const fetch = require("node-fetch");
 const axios = require("axios");
 const PORT = process.env.PORT || 5000;
 const { MongoClient, ServerApiVersion, ObjectId } = require("mongodb");
