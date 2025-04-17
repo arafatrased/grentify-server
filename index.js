@@ -2,6 +2,8 @@ const express = require("express");
 require("dotenv").config();
 const app = express();
 const cors = require("cors");
+const fetch = require("node-fetch");
+const axios = require("axios");
 const PORT = process.env.PORT || 5000;
 const { MongoClient, ServerApiVersion, ObjectId } = require("mongodb");
 
@@ -97,66 +99,18 @@ async function run() {
       res.send(result);
     });
 
-    // Dashboard all api //
+    // location data fetch
 
-    // get all gadget data for dashboard
-    app.get("/dashboard-gadgets", async (req, res) => {
-      const { category, search, page, limit } = req.query;
-      const pageNumber = parseInt(page);
-      const limitNumber = parseInt(limit);
-      const skip = (pageNumber - 1) * limitNumber;
-
-      // start with empty query for filter
-      let query = {};
-
-      // category filter by category object value
-      if (category) {
-        query["category.value"] = category;
-      }
-
-      // search functionality
-      if (search) {
-        query = {
-          ...query,
-          $or: [
-            { title: { $regex: search, $options: "i" } },
-            { description: { $regex: search, $options: "i" } },
-          ],
-        };
-      }
+    app.get("/api/location", async (req, res) => {
+      const GeoAPi = process.env.IP_GEO_LOACATION_API_KEY;
+      const url = `https://api.ipgeolocation.io/ipgeo?apiKey=${GeoAPi}&fields=geo`;
 
       try {
-        // Get total count for pagination info
-        const total = await gadgetsCollection.countDocuments(query);
-
-        // Get paginated results
-        const gadgets = await gadgetsCollection
-          .find(query)
-          .sort({ _id: -1 })
-          .skip(skip)
-          .limit(limitNumber)
-          .toArray();
-
-        res.send({
-          gadgets,
-          total,
-          currentPage: pageNumber,
-          totalPages: Math.ceil(total / limitNumber),
-        });
+        const response = await axios.get(url);
+        res.json(response.data);
       } catch (error) {
-        res.status(500).send({ message: "server error" });
-      }
-    });
-
-    // delete gadgets api
-    app.delete("/dashboard-gadgets/:id", async (req, res) => {
-      try {
-        const id = req.params.id;
-        const query = { _id: new ObjectId(id) };
-        const result = await gadgetsCollection.deleteOne(query);
-        res.send(result);
-      } catch {
-        console.log("Delete faield");
+        console.error("Error fetching location:", error.message);
+        res.status(500).json({ error: "Failed to fetch location" });
       }
     });
 
@@ -173,4 +127,6 @@ run().catch(console.dir);
 
 // APIs
 
-app.listen(PORT, () => console.log(`Server running on port ${PORT}`));
+app.listen(PORT, () =>
+  console.log(`Server running on http://localhost:${PORT}`)
+);
