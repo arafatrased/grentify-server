@@ -99,6 +99,70 @@ async function run() {
       res.send(result);
     });
 
+    // Dashboard all api //
+
+    // get all gadget data for dashboard
+    app.get("/dashboard-gadgets", async (req, res) => {
+      const { category, search, page, limit } = req.query;
+      const pageNumber = parseInt(page);
+      const limitNumber = parseInt(limit);
+      const skip = (pageNumber - 1) * limitNumber;
+
+      // start with empty query for filter
+      let query = {};
+
+      // category filter by category object value
+      if (category) {
+        query["category.value"] = category;
+      }
+
+      // search functionality
+      if (search) {
+        query = {
+          ...query,
+          $or: [
+            { title: { $regex: search, $options: "i" } },
+            { description: { $regex: search, $options: "i" } },
+          ],
+        };
+      }
+
+      try {
+        // Get total count for pagination info
+        const total = await gadgetsCollection.countDocuments(query);
+
+        // Get paginated results
+        const gadgets = await gadgetsCollection
+          .find(query)
+          .sort({ _id: -1 })
+          .skip(skip)
+          .limit(limitNumber)
+          .toArray();
+
+        res.send({
+          gadgets,
+          total,
+          currentPage: pageNumber,
+          totalPages: Math.ceil(total / limitNumber),
+        });
+      } catch (error) {
+        res.status(500).send({ message: "server error" });
+      }
+    });
+
+    // delete gadgets api
+    app.delete("/dashboard-gadgets/:id", async (req, res) => {
+      try {
+        const id = req.params.id;
+        const query = { _id: new ObjectId(id) };
+        const result = await gadgetsCollection.deleteOne(query);
+        res.send(result);
+      } catch {
+        console.log("Delete faield");
+      }
+    });
+
+
     // location data fetch
 
     app.get("/api/location", async (req, res) => {
