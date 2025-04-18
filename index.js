@@ -23,12 +23,18 @@ const client = new MongoClient(uri, {
 async function run() {
   try {
     const gadgetsCollection = client.db("grentify").collection("gadgets");
+    const ordersCollection = client.db("grentify").collection("orders");
 
-    // create or post single gadget data
+    // post single gadget data
     app.post("/gadget", async (req, res) => {
       const gadget = req.body;
-      const result = await gadgetsCollection.insertOne(gadget);
-      res.send(result);
+      try {
+        const result = await gadgetsCollection.insertOne(gadget);
+        res.send(result);
+      } catch (error) {
+        console.log("Error inserting gadget:", error);
+        res.status(500).send({ message: "Failed to intert gadget.", error });
+      }
     });
 
     // get all gadget data from mongodb with filtering
@@ -98,7 +104,41 @@ async function run() {
       res.send(result);
     });
 
-    // Dashboard all api //
+    // order reated api
+
+    //  create order api
+    app.post("/user-order", async (req, res) => {
+      const order = req.body;
+      console.log(order);
+      try {
+        const result = await ordersCollection.insertOne(order);
+        res.send(result);
+      } catch (error) {
+        console.error("Error inserting order:", error);
+        res.status(500).send({ message: "Failed to insert order", error });
+      }
+    });
+
+    // get mycart data
+    app.get("/my-orders", async (req, res) => {
+      try {
+        const email = req.query.email;
+
+        if (!email) {
+          return res.status(400).send({ message: "Email Query is requireed" });
+        }
+
+        const query = { "user.email": email };
+
+        const myOrder = await ordersCollection.find(query).toArray();
+        res.send(myOrder);
+      } catch (error) {
+        console.log("Failed to get my order", error);
+        res.status(500).send({ message: "Failed to data fetch", error });
+      }
+    });
+
+    // Dashboard related api
 
     // get all gadget data for dashboard
     app.get("/dashboard-gadgets", async (req, res) => {
@@ -161,9 +201,7 @@ async function run() {
       }
     });
 
-
     // location data fetch
-
     app.get("/api/location", async (req, res) => {
       const GeoAPi = process.env.IP_GEO_LOACATION_API_KEY;
       const url = `https://api.ipgeolocation.io/ipgeo?apiKey=${GeoAPi}&fields=geo`;
