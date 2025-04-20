@@ -109,7 +109,6 @@ async function run() {
     //  create order api
     app.post("/user-order", async (req, res) => {
       const order = req.body;
-      console.log(order);
       try {
         const result = await ordersCollection.insertOne(order);
         res.send(result);
@@ -135,6 +134,27 @@ async function run() {
       } catch (error) {
         console.log("Failed to get my order", error);
         res.status(500).send({ message: "Failed to data fetch", error });
+      }
+    });
+
+    // delete mycart data
+    app.delete("/my-orders/:id", async (req, res) => {
+      try {
+        const id = req.params.id;
+        const query = { _id: new ObjectId(id) };
+
+        const result = await ordersCollection.deleteOne(query);
+
+        if (result.deletedCount === 1) {
+          res.send({ success: true, message: "Order deleted successfully" });
+        } else {
+          res.status(404).send({ success: false, message: "Order not found" });
+        }
+      } catch (error) {
+        console.error("Failed to delete order", error);
+        res
+          .status(500)
+          .send({ success: false, message: "Delete Failed", error });
       }
     });
 
