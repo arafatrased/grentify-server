@@ -37,11 +37,32 @@ async function run() {
       }
     });
     // get all user data from mongodb
-    app.get("/users", async (req, res) => {
-      const query = {};
-      const result = await usersCollection.find(query).toArray();
-      res.send(result);
-    });
+    app.get('/alluser', async (req, res) => {
+      try {
+          const page = parseInt(req.query.page) || 1;
+          const limit = parseInt(req.query.limit) || 12;
+          const skip = (page - 1) * limit;
+  
+          const totalUsers = await usersCollection.countDocuments();
+          const users = await usersCollection.find({})
+              .skip(skip)
+              .limit(limit)
+              .project({ password: 0 }) // hide password or sensitive fields
+              .toArray();
+  
+          res.status(200).json({
+              success: true,
+              totalUsers,
+              users
+          });
+      } catch (error) {
+          console.error("Error fetching users:", error);
+          res.status(500).json({
+              success: false,
+              message: "Internal server error"
+          });
+      }
+  });
     // get all gadget data from mongodb with filtering
     app.get("/gadgets", async (req, res) => {
       const search = req.query.search || "";
