@@ -42,7 +42,7 @@ async function run() {
       try {
         const { page = 1, limit = 12, role, status, search } = req.query;
         const query = {};
-    
+
         if (role) query.role = role;
         if (status) query.status = status;
         if (search) {
@@ -53,21 +53,73 @@ async function run() {
             { phone: regex }
           ];
         }
-    
+
         const skip = (parseInt(page) - 1) * parseInt(limit);
-    
+
         const usersCursor = usersCollection.find(query).skip(skip).limit(parseInt(limit));
         const users = await usersCursor.toArray(); // ✅ Convert cursor to array
-    
+
         const totalUsers = await usersCollection.countDocuments(query);
-    
+
         res.json({ users, totalUsers }); // ✅ Now safe to send
       } catch (error) {
         console.error('Error fetching users:', error);
         res.status(500).json({ message: 'Server error' });
       }
     });
-    
+
+    //user Status api
+    app.get('/user-status', async (req, res) => {
+      try {
+        const statusCounts = await usersCollection.aggregate([
+          {
+            $facet: {
+              pending: [
+                { $match: { status: 'pending' } },
+                { $count: 'count' }
+              ],
+              approved: [
+                { $match: { status: 'approved' } },
+                { $count: 'count' }
+              ],
+              blocked: [
+                { $match: { status: 'blocked' } },
+                { $count: 'count' }
+              ],
+              borrower: [
+                { $match: { role: 'borrower' } },
+                { $count: 'count' }
+              ],
+              lender: [
+                { $match: { role: 'lender' } },
+                { $count: 'count' }
+              ],
+              admin: [
+                { $match: { role: 'admin' } },
+                { $count: 'count' }
+              ]
+            }
+          }
+        ]).toArray();
+
+        const result = statusCounts[0]; // Access the first result from the aggregation array
+
+        const statusData = [
+          { title: 'Pending Users', number: result.pending[0]?.count || 0, bgColor: '#C435DC' },
+          { title: 'Approved Users', number: result.approved[0]?.count || 0, bgColor: '#2AA75F' },
+          { title: 'Blocked Users', number: result.blocked[0]?.count || 0, bgColor: '#644A07' },
+          { title: 'Borrower', number: result.borrower[0]?.count || 0, bgColor: '#E32A46' },
+          { title: 'Lender', number: result.lender[0]?.count || 0, bgColor: '#2C3930' },
+          { title: 'Admin', number: result.admin[0]?.count || 0, bgColor: '#987070' }
+        ];
+
+        res.json(statusData);
+      } catch (error) {
+        console.error('Error fetching user status data:', error);
+        res.status(500).json({ message: 'Server error' });
+      }
+    });
+
 
     // get all gadget data from mongodb with filtering
     app.get("/gadgets", async (req, res) => {
