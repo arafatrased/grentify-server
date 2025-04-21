@@ -2,7 +2,6 @@ const express = require("express");
 require("dotenv").config();
 const app = express();
 const cors = require("cors");
-const axios = require("axios");
 const PORT = process.env.PORT || 5000;
 const { MongoClient, ServerApiVersion, ObjectId } = require("mongodb");
 
@@ -24,6 +23,7 @@ async function run() {
   try {
     const gadgetsCollection = client.db("grentify").collection("gadgets");
     const ordersCollection = client.db("grentify").collection("orders");
+    const usersCollection = client.db("grentify").collection("users");
 
     // post single gadget data
     app.post("/gadget", async (req, res) => {
@@ -36,7 +36,12 @@ async function run() {
         res.status(500).send({ message: "Failed to intert gadget.", error });
       }
     });
-
+    // get all user data from mongodb
+    app.get("/users", async (req, res) => {
+      const query = {};
+      const result = await usersCollection.find(query).toArray();
+      res.send(result);
+    });
     // get all gadget data from mongodb with filtering
     app.get("/gadgets", async (req, res) => {
       const search = req.query.search || "";
