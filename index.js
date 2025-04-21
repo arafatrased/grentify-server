@@ -39,26 +39,35 @@ async function run() {
     // get all user data from mongodb
     // Express API: /alluser
     app.get('/alluser', async (req, res) => {
-      const { page = 1, limit = 12, role, status, search } = req.query;
-      const query = {};
-
-      if (role) query.role = role;
-      if (status) query.status = status;
-      if (search) {
-        const regex = new RegExp(search, 'i');
-        query.$or = [
-          { name: regex },
-          { email: regex },
-          { phone: regex }
-        ];
+      try {
+        const { page = 1, limit = 12, role, status, search } = req.query;
+        const query = {};
+    
+        if (role) query.role = role;
+        if (status) query.status = status;
+        if (search) {
+          const regex = new RegExp(search, 'i');
+          query.$or = [
+            { name: regex },
+            { email: regex },
+            { phone: regex }
+          ];
+        }
+    
+        const skip = (parseInt(page) - 1) * parseInt(limit);
+    
+        const usersCursor = usersCollection.find(query).skip(skip).limit(parseInt(limit));
+        const users = await usersCursor.toArray(); // ✅ Convert cursor to array
+    
+        const totalUsers = await usersCollection.countDocuments(query);
+    
+        res.json({ users, totalUsers }); // ✅ Now safe to send
+      } catch (error) {
+        console.error('Error fetching users:', error);
+        res.status(500).json({ message: 'Server error' });
       }
-
-      const skip = (page - 1) * limit;
-      const users = await User.find(query).skip(skip).limit(parseInt(limit));
-      const totalUsers = await User.countDocuments(query);
-
-      res.json({ users, totalUsers });
     });
+    
 
     // get all gadget data from mongodb with filtering
     app.get("/gadgets", async (req, res) => {
