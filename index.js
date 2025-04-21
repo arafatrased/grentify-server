@@ -37,32 +37,29 @@ async function run() {
       }
     });
     // get all user data from mongodb
+    // Express API: /alluser
     app.get('/alluser', async (req, res) => {
-      try {
-          const page = parseInt(req.query.page) || 1;
-          const limit = parseInt(req.query.limit) || 12;
-          const skip = (page - 1) * limit;
-  
-          const totalUsers = await usersCollection.countDocuments();
-          const users = await usersCollection.find({})
-              .skip(skip)
-              .limit(limit)
-              .project({ password: 0 }) // hide password or sensitive fields
-              .toArray();
-  
-          res.status(200).json({
-              success: true,
-              totalUsers,
-              users
-          });
-      } catch (error) {
-          console.error("Error fetching users:", error);
-          res.status(500).json({
-              success: false,
-              message: "Internal server error"
-          });
+      const { page = 1, limit = 12, role, status, search } = req.query;
+      const query = {};
+
+      if (role) query.role = role;
+      if (status) query.status = status;
+      if (search) {
+        const regex = new RegExp(search, 'i');
+        query.$or = [
+          { name: regex },
+          { email: regex },
+          { phone: regex }
+        ];
       }
-  });
+
+      const skip = (page - 1) * limit;
+      const users = await User.find(query).skip(skip).limit(parseInt(limit));
+      const totalUsers = await User.countDocuments(query);
+
+      res.json({ users, totalUsers });
+    });
+
     // get all gadget data from mongodb with filtering
     app.get("/gadgets", async (req, res) => {
       const search = req.query.search || "";
