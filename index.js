@@ -24,6 +24,7 @@ async function run() {
   try {
     const gadgetsCollection = client.db("grentify").collection("gadgets");
     const ordersCollection = client.db("grentify").collection("orders");
+    const couponCollection = client.db("grentify").collection("coupons");
 
     // post single gadget data
     app.post("/gadget", async (req, res) => {
@@ -159,6 +160,18 @@ async function run() {
     });
 
     // Dashboard related api
+
+    // post coupon code
+    app.post("/coupon-code", async (req, res) => {
+      const coupon = req.body;
+      try {
+        const result = await couponCollection.insertOne(coupon);
+        res.send(result);
+      } catch (error) {
+        console.log("Error inserting gadget:", error);
+        res.status(500).send({ message: "Failed to intert coupon.", error });
+      }
+    });
 
     // get all gadget data for dashboard
     app.get("/dashboard-gadgets", async (req, res) => {
