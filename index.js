@@ -229,14 +229,16 @@ async function run() {
     app.get("/my-cart", async (req, res) => {
       try {
         const email = req.query.email;
+        console.log(email);
 
         if (!email) {
           return res.status(400).send({ message: "Email Query is requireed" });
         }
 
-        const query = { "user.email": email };
+        const query = { userEmail: email };
 
         const myCart = await cartCollection.find(query).toArray();
+        console.log(myCart);
         res.send(myCart);
       } catch (error) {
         console.log("Failed to get my cart", error);
