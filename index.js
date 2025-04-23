@@ -241,6 +241,27 @@ async function run() {
       }
     });
 
+    //save payment info to db
+    app.post("/payment", async (req, res) => {
+      const payment = req.body;
+      try {
+        // Insert the payment into the orders collection
+        const paymentResult = await ordersCollection.insertOne(payment);
+
+        // Delete the cart item after payment
+        const query = { _id: {
+          $in: payment.cartItemsId.map(id => new ObjectId(id))
+        }};
+        const deleteResult = await cartCollection.deleteMany(query);
+
+        res.send({paymentResult, deleteResult});
+
+      } catch (error) {
+        console.error("Error inserting payment:", error);
+        res.status(500).send({ message: "Failed to insert payment", error });
+      }
+    });
+
     // GET coupon by code
     app.get("/coupon-code/:code", async (req, res) => {
       const code = req.params.code;
