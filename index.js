@@ -42,6 +42,7 @@ async function run() {
     app.post("/create-payment-intent", async (req, res) => {
       const { price } = req.body;
       const amount = parseInt(price * 100); // Convert to cents
+      console.log("Amount in cents:", amount); // Log the amount for debugging
 
       try {
         const paymentIntent = await stripe.paymentIntents.create({
