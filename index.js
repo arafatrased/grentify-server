@@ -23,6 +23,8 @@ const client = new MongoClient(uri, {
 async function run() {
   try {
     const gadgetsCollection = client.db("grentify").collection("gadgets");
+    const cartCollection = client.db("grentify").collection("cart");
+    const couponCollection = client.db("grentify").collection("coupons");
     const ordersCollection = client.db("grentify").collection("orders");
     const usersCollection = client.db("grentify").collection("users");
 
@@ -159,7 +161,7 @@ async function run() {
       }
 
       // sorting logic
-      let sort = { _id: -1 }; // show by default descending order
+      let sort = { _id: -1 }; // show by default descending cart
 
       if (sortType === "title") {
         sort = { title: 1 };
@@ -208,22 +210,22 @@ async function run() {
       res.send(result);
     });
 
-    // order reated api
+    // cart reated api
 
-    //  create order api
-    app.post("/user-order", async (req, res) => {
-      const order = req.body;
+    //  create cart api
+    app.post("/user-cart", async (req, res) => {
+      const cart = req.body;
       try {
-        const result = await ordersCollection.insertOne(order);
+        const result = await cartCollection.insertOne(cart);
         res.send(result);
       } catch (error) {
-        console.error("Error inserting order:", error);
-        res.status(500).send({ message: "Failed to insert order", error });
+        console.error("Error inserting cart:", error);
+        res.status(500).send({ message: "Failed to insert cart", error });
       }
     });
 
     // get mycart data
-    app.get("/my-orders", async (req, res) => {
+    app.get("/my-cart", async (req, res) => {
       try {
         const email = req.query.email;
 
@@ -233,29 +235,46 @@ async function run() {
 
         const query = { "user.email": email };
 
-        const myOrder = await ordersCollection.find(query).toArray();
-        res.send(myOrder);
+        const myCart = await cartCollection.find(query).toArray();
+        res.send(myCart);
       } catch (error) {
-        console.log("Failed to get my order", error);
+        console.log("Failed to get my cart", error);
         res.status(500).send({ message: "Failed to data fetch", error });
       }
     });
 
+    // GET coupon by code
+    app.get("/coupon-code/:code", async (req, res) => {
+      const code = req.params.code;
+      console.log(code);
+      try {
+        const coupon = await couponCollection.findOne({ code: code });
+
+        if (!coupon) {
+          return res.status(404).send({ message: "Invalid coupon code" });
+        }
+
+        res.status(200).send({ message: "ok" });
+      } catch (error) {
+        res.status(500).send({ message: "Failed to check coupon code", error });
+      }
+    });
+
     // delete mycart data
-    app.delete("/my-orders/:id", async (req, res) => {
+    app.delete("/my-cart/:id", async (req, res) => {
       try {
         const id = req.params.id;
         const query = { _id: new ObjectId(id) };
 
-        const result = await ordersCollection.deleteOne(query);
+        const result = await cartCollection.deleteOne(query);
 
         if (result.deletedCount === 1) {
-          res.send({ success: true, message: "Order deleted successfully" });
+          res.send({ success: true, message: "cart deleted successfully" });
         } else {
-          res.status(404).send({ success: false, message: "Order not found" });
+          res.status(404).send({ success: false, message: "cart not found" });
         }
       } catch (error) {
-        console.error("Failed to delete order", error);
+        console.error("Failed to delete cart", error);
         res
           .status(500)
           .send({ success: false, message: "Delete Failed", error });
@@ -263,6 +282,18 @@ async function run() {
     });
 
     // Dashboard related api
+
+    // post coupon code
+    app.post("/coupon-code", async (req, res) => {
+      const coupon = req.body;
+      try {
+        const result = await couponCollection.insertOne(coupon);
+        res.send(result);
+      } catch (error) {
+        console.log("Error inserting gadget:", error);
+        res.status(500).send({ message: "Failed to intert coupon.", error });
+      }
+    });
 
     // get all gadget data for dashboard
     app.get("/dashboard-gadgets", async (req, res) => {
