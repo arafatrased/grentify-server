@@ -211,7 +211,23 @@ async function run() {
       res.send(result);
     });
 
-    // cart reated api
+    // get all orders data in mongodb
+    app.get("/all-orders", async (req, res) => {
+      const { page = 1, limit = 10 } = req.query;
+      const skip = (parseInt(page) - 1) * parseInt(limit);
+
+      try {
+        const ordersCursor = ordersCollection.find().skip(skip).limit(parseInt(limit));
+        const orders = await ordersCursor.toArray(); // ✅ Convert cursor to array
+
+        const totalOrders = await ordersCollection.countDocuments();
+
+        res.json({ orders, totalOrders }); // ✅ Now safe to send
+      } catch (error) {
+        console.error('Error fetching orders:', error);
+        res.status(500).json({ message: 'Server error' });
+      }
+    });
 
     //  create cart api
     app.post("/user-cart", async (req, res) => {
