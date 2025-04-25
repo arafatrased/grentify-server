@@ -2,7 +2,7 @@ const express = require("express");
 require("dotenv").config();
 const app = express();
 const cors = require("cors");
-const stripe = require("stripe")(process.env.STRIPE_SECRET_KEY);
+const axios = require("axios");
 const PORT = process.env.PORT || 5000;
 const { MongoClient, ServerApiVersion, ObjectId } = require("mongodb");
 
@@ -25,8 +25,7 @@ async function run() {
     const gadgetsCollection = client.db("grentify").collection("gadgets");
     const cartCollection = client.db("grentify").collection("cart");
     const couponCollection = client.db("grentify").collection("coupons");
-    const ordersCollection = client.db("grentify").collection("orders");
-    const usersCollection = client.db("grentify").collection("users");
+    const userCollection = client.db("grentify").collection("users");
 
     // post single gadget data
     app.post("/gadget", async (req, res) => {
@@ -39,109 +38,6 @@ async function run() {
         res.status(500).send({ message: "Failed to intert gadget.", error });
       }
     });
-
-    // stripe payment api
-    app.post("/create-payment-intent", async (req, res) => {
-      const { price } = req.body;
-      const amount = parseInt(price * 100); // Convert to cents
-
-      try {
-        const paymentIntent = await stripe.paymentIntents.create({
-          amount,
-          currency: "usd",
-          payment_method_types: ["card"],
-        });
-        res.send({ clientSecret: paymentIntent.client_secret });
-      } catch (error) {
-        console.error("Error creating payment intent:", error);
-        res.status(500).send({ message: "Failed to create payment intent" });
-      }
-    })
-
-    // get all user data from mongodb
-    // Express API: /alluser
-    app.get('/alluser', async (req, res) => {
-      try {
-        const { page = 1, limit = 12, role, status, search } = req.query;
-        const query = {};
-
-        if (role) query.role = role;
-        if (status) query.status = status;
-        if (search) {
-          const regex = new RegExp(search, 'i');
-          query.$or = [
-            { name: regex },
-            { email: regex },
-            { phone: regex }
-          ];
-        }
-
-        const skip = (parseInt(page) - 1) * parseInt(limit);
-
-        const usersCursor = usersCollection.find(query).skip(skip).limit(parseInt(limit));
-        const users = await usersCursor.toArray(); // ✅ Convert cursor to array
-
-        const totalUsers = await usersCollection.countDocuments(query);
-
-        res.json({ users, totalUsers }); // ✅ Now safe to send
-      } catch (error) {
-        console.error('Error fetching users:', error);
-        res.status(500).json({ message: 'Server error' });
-      }
-    });
-
-    //user Status api
-    app.get('/user-status', async (req, res) => {
-      try {
-        const statusCounts = await usersCollection.aggregate([
-          {
-            $facet: {
-              pending: [
-                { $match: { status: 'pending' } },
-                { $count: 'count' }
-              ],
-              approved: [
-                { $match: { status: 'approved' } },
-                { $count: 'count' }
-              ],
-              blocked: [
-                { $match: { status: 'blocked' } },
-                { $count: 'count' }
-              ],
-              borrower: [
-                { $match: { role: 'borrower' } },
-                { $count: 'count' }
-              ],
-              lender: [
-                { $match: { role: 'lender' } },
-                { $count: 'count' }
-              ],
-              admin: [
-                { $match: { role: 'admin' } },
-                { $count: 'count' }
-              ]
-            }
-          }
-        ]).toArray();
-
-        const result = statusCounts[0]; // Access the first result from the aggregation array
-
-        const statusData = [
-          { title: 'Pending Users', number: result.pending[0]?.count || 0, bgColor: '#C435DC' },
-          { title: 'Approved Users', number: result.approved[0]?.count || 0, bgColor: '#2AA75F' },
-          { title: 'Blocked Users', number: result.blocked[0]?.count || 0, bgColor: '#644A07' },
-          { title: 'Borrower', number: result.borrower[0]?.count || 0, bgColor: '#E32A46' },
-          { title: 'Lender', number: result.lender[0]?.count || 0, bgColor: '#2C3930' },
-          { title: 'Admin', number: result.admin[0]?.count || 0, bgColor: '#987070' }
-        ];
-
-        res.json(statusData);
-      } catch (error) {
-        console.error('Error fetching user status data:', error);
-        res.status(500).json({ message: 'Server error' });
-      }
-    });
-
 
     // get all gadget data from mongodb with filtering
     app.get("/gadgets", async (req, res) => {
@@ -278,6 +174,25 @@ async function run() {
         res
           .status(500)
           .send({ success: false, message: "Delete Failed", error });
+      }
+    });
+
+    // get my or active user info
+    app.get("/my-info/:email", async (req, res) => {
+      try {
+        const email = req.params.email;
+
+        if (!email) {
+          return res.status(400).send({ message: "Email Params is requireed" });
+        }
+
+        const query = { email: email };
+
+        const user = await userCollection.find(query).toArray();
+        res.send(user);
+      } catch (error) {
+        console.log("Failed to get my info", error);
+        res.status(500).send({ message: "Failed to data fetch", error });
       }
     });
 
