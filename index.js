@@ -27,18 +27,6 @@ async function run() {
     const couponCollection = client.db("grentify").collection("coupons");
     const userCollection = client.db("grentify").collection("users");
 
-    // post single gadget data
-    app.post("/gadget", async (req, res) => {
-      const gadget = req.body;
-      try {
-        const result = await gadgetsCollection.insertOne(gadget);
-        res.send(result);
-      } catch (error) {
-        console.log("Error inserting gadget:", error);
-        res.status(500).send({ message: "Failed to intert gadget.", error });
-      }
-    });
-
     // get all gadget data from mongodb with filtering
     app.get("/gadgets", async (req, res) => {
       const search = req.query.search || "";
@@ -197,6 +185,40 @@ async function run() {
     });
 
     // Dashboard related api
+
+    // post single gadget data
+    app.post("/gadget", async (req, res) => {
+      const gadget = req.body;
+      try {
+        const result = await gadgetsCollection.insertOne(gadget);
+        res.send(result);
+      } catch (error) {
+        console.log("Error inserting gadget:", error);
+        res.status(500).send({ message: "Failed to intert gadget.", error });
+      }
+    });
+
+    // update gadget
+    app.patch("/update-gadget/:id", async (req, res) => {
+      const gadgetInfo = req.body;
+      const id = req.params.id;
+
+      const filter = { _id: new ObjectId(id) };
+
+      const updatedDoc = {
+        $set: gadgetInfo,
+      };
+
+      try {
+        const result = await gadgetsCollection.updateOne(filter, updatedDoc);
+        res.send(result);
+      } catch (error) {
+        console.log(error);
+        res
+          .status(500)
+          .send({ message: "Failed to update gadget", error: error.message });
+      }
+    });
 
     // post coupon code
     app.post("/coupon-code", async (req, res) => {
