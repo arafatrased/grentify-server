@@ -379,6 +379,67 @@ async function run() {
       }
     });
 
+    app.get("/dashboard-mygadgets", async (req, res) => {
+      const { category, search, page, limit, email } = req.query;
+      const pageNumber = parseInt(page);
+      const limitNumber = parseInt(limit);
+      const skip = (pageNumber - 1) * limitNumber;
+    
+      // Build filter query
+      let query = {};
+    
+      // Filter by category
+      if (category) {
+        query["category.value"] = category;
+      }
+    
+      // Filter by user email
+      if (email) {
+        query["lender.itemAddedEmail"] = email;
+      }
+    
+      // Search by title or description
+      if (search) {
+        query = {
+          ...query,
+          $or: [
+            { title: { $regex: search, $options: "i" } },
+            { description: { $regex: search, $options: "i" } },
+          ],
+        };
+      }
+    
+      try {
+        // Total count for pagination
+        const total = await gadgetsCollection.countDocuments(query);
+    
+        // Fetch only selected fields
+        const gadgets = await gadgetsCollection
+          .find(query)
+          .project({
+            title: 1,
+            price: 1,
+            category: 1,
+            date: 1,
+            "lender.itemAddedEmail": 1,
+          })
+          .sort({ _id: -1 })
+          .skip(skip)
+          .limit(limitNumber)
+          .toArray();
+    
+        res.send({
+          gadgets,
+          total,
+          currentPage: pageNumber,
+          totalPages: Math.ceil(total / limitNumber),
+        });
+      } catch (error) {
+        res.status(500).send({ message: "server error" });
+      }
+    });
+    
+
     // delete gadgets api
     app.delete("/dashboard-gadgets/:id", async (req, res) => {
       try {
