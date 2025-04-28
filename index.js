@@ -453,18 +453,18 @@ async function run() {
     });
 
     // location data fetch
-    app.get("/api/location", async (req, res) => {
-      const GeoAPi = process.env.IP_GEO_LOACATION_API_KEY;
-      const url = `https://api.ipgeolocation.io/ipgeo?apiKey=${GeoAPi}&fields=geo`;
+    // app.get("/api/location", async (req, res) => {
+    //   const GeoAPi = process.env.IP_GEO_LOACATION_API_KEY;
+    //   const url = `https://api.ipgeolocation.io/ipgeo?apiKey=${GeoAPi}&fields=geo`;
 
-      try {
-        const response = await axios.get(url);
-        res.json(response.data);
-      } catch (error) {
-        console.error("Error fetching location:", error.message);
-        res.status(500).json({ error: "Failed to fetch location" });
-      }
-    });
+    //   try {
+    //     const response = await axios.get(url);
+    //     res.json(response.data);
+    //   } catch (error) {
+    //     console.error("Error fetching location:", error.message);
+    //     res.status(500).json({ error: "Failed to fetch location" });
+    //   }
+    // });
 
     // server root api
     app.get("/", (req, res) => {
