@@ -289,7 +289,7 @@ async function run() {
           return res.status(404).send({ message: "Invalid coupon code" });
         }
 
-        res.status(200).send({ message: "ok" });
+        res.status(200).send({coupon});
       } catch (error) {
         res.status(500).send({ message: "Failed to check coupon code", error });
       }
